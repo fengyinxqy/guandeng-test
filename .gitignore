@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+.env
+.env.*
+!.env.example
+data/*
+!data/gateway_requests.csv
+outputs/*
+!outputs/*.csv
+!outputs/*.json
+!outputs/*.png

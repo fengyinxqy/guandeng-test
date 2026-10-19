@@ -1,0 +1,15 @@
+{
+  "age_threshold_minutes": 15,
+  "slot_threshold": 3,
+  "cluster_modes": {
+    "华东边缘集群": "age",
+    "华北异构集群": "slots",
+    "华南算力主集群": "age",
+    "香港低延迟专线": "age"
+  },
+  "unseen_cluster_mode": "both",
+  "rule_semantics": "age > threshold OR slots <= threshold; cluster mode selects terms",
+  "status": "offline candidate; no production deployment or causal evidence",
+  "selected_using": "earlier 70% timestamp partition only",
+  "training_cutoff_utc": "2026-09-05T13:09:00+00:00"
+}

@@ -1,0 +1,20 @@
+[project]
+name = "moni"
+version = "0.1.0"
+description = "Lightweight Python assessment workspace"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pandas>=2.2,<4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<10",
+]
+plots = [
+    "matplotlib>=3.9,<4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
