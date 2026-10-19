@@ -65,6 +65,16 @@ b29c0c4531deafe5921397720cc0518bf50957cebbf965bfc356606c77866620
 
 ## 怎么证明有用
 
+### 可视化
+
+图表直接读取主脚本输出，不单独拟合规则或改变数据口径。第一张是全量描述，后两张是后段时间回放及固定规则的情景测算。
+
+![集群状态年龄与槽位风险对比](outputs/risk_by_cluster.png)
+
+![后段各规则标记构成与乐观情景成本](outputs/rule_comparison.png)
+
+![不同挽回比例和新增失败比例下的情景净收益](outputs/cost_sensitivity.png)
+
 ### 后段时间回放
 
 后段 310 次请求：261 成功、36 失败、13 未知；不干预的**已知失败损失**为 `36×120 = 4320 元`。
@@ -117,7 +127,7 @@ b29c0c4531deafe5921397720cc0518bf50957cebbf965bfc356606c77866620
 
 ## 复现
 
-需要 Python 3.13 与 uv；依赖仅 pandas、pytest 及其传递依赖，版本由 `uv.lock` 固定。不需要数据库、Notebook、API Key 或外部服务。
+需要 Python 3.13 与 uv；基础依赖为 pandas、pytest 及其传递依赖，版本由 `uv.lock` 固定。可选 `plots` 依赖组提供 Matplotlib；不需要数据库、Notebook、API Key 或外部服务。
 
 ```powershell
 uv sync --locked
@@ -131,6 +141,15 @@ uv run --locked pytest -q
 uv run --locked python main.py --input data/gateway_requests.csv --output-dir outputs
 ```
 
+生成图表（先运行上面的分析命令）：
+
+```powershell
+uv sync --locked --group plots
+uv run --locked --group plots python plot_results.py
+```
+
+`plot_results.py` 仅读取分析 CSV，生成三张 PNG；自定义分析目录时，作图也加 `--output-dir 目录`。中文字体自动选用微软雅黑或 Noto Sans CJK SC 等可用字体；缺少时明确报错，需先安装中文字体再生成。
+
 脚本只读取源文件，覆盖生成指定输出目录中的同名分析文件。结果清单：
 
 | 输出 | 对应证据 |
@@ -143,6 +162,9 @@ uv run --locked python main.py --input data/gateway_requests.csv --output-dir ou
 | `outputs/policy_comparison.csv` | 前段、后段、全量的规则回放，README 表格数字来源 |
 | `outputs/request_decisions.csv` | 每个唯一请求的分段、特征、规则模式与标记，支持逐条核查 |
 | `outputs/sensitivity.csv` | 固定规则后的 q/r 和未知结果情景 |
+| `outputs/risk_by_cluster.png` | 集群的状态年龄 / 槽位分组失败率，附失败数和已知结果分母 |
+| `outputs/rule_comparison.png` | 后段各规则标记构成、覆盖失败数和乐观情景成本 |
+| `outputs/cost_sensitivity.png` | 固定分集群规则在不同 q/r 假设下的净收益与回本点 |
 
 测试覆盖时区对齐、阈值边界、重复/冲突 ID、异常输入、缺失标签、成本计算、同时间戳切分和不依赖 success 的判定。测试夹具为明确标记的合成边界数据，**不用于以上业务结论**。真实 CSV 通过脚本回放验证。
 
