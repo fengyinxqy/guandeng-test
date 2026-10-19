@@ -1,0 +1,25 @@
+{
+  "source": "gateway_requests.csv",
+  "sha256": "b29c0c4531deafe5921397720cc0518bf50957cebbf965bfc356606c77866620",
+  "raw_rows": 1078,
+  "exact_duplicate_rows_removed": 51,
+  "unique_requests": 1027,
+  "known_outcomes": 976,
+  "successes": 850,
+  "failures": 126,
+  "unknown_outcomes": 51,
+  "zero_payload_rows_retained": 2,
+  "zero_slot_rows_retained": 47,
+  "request_time_min_utc": "2026-08-31T23:00:00+00:00",
+  "request_time_max_utc": "2026-09-07T13:50:00+00:00",
+  "split_cutoff_utc": "2026-09-05T13:09:00+00:00",
+  "train_requests": 717,
+  "validation_requests": 310,
+  "notes": [
+    "Timezone-normalized UTC arithmetic. Conflicting IDs and invalid inputs fail explicitly.",
+    "Missing success is unknown, not success/failure; separate sensitivity endpoint provided.",
+    "10 yuan per alerted request is a proxy; no node_id to count unique unavailable events.",
+    "Scenario q=1,r=0 is optimistic; reroute capacity/outcomes and waiting duration are unobserved.",
+    "Full-data EDA preceded design; temporal replay is not an untouched confirmatory test."
+  ]
+}

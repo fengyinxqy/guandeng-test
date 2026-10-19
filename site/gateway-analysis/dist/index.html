@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="从健康状态过期与容量不足两类风险，理解大模型网关调度失败。含可复现数据、时间回放与成本情景计算。">
+  <meta name="theme-color" content="#142d43"><title>网关调度 · 风险与收益观察</title>
+  <link rel="stylesheet" href="styles.css"><script src="assets/report-data.js" defer></script><script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#content">跳到正文</a>
+<aside class="rail">
+  <a class="brand" href="#overview" aria-label="回到首页"><span class="brand-icon">↗</span><span>GATEWAY<br><small>FIELD REPORT / 01</small></span></a>
+  <p class="rail-caption">大模型服务网关<br>调度策略分析</p>
+  <nav aria-label="章节导航"><a class="active" href="#overview"><span>01</span> 分析概览</a><a href="#signals"><span>02</span> 风险信号</a><a href="#policy"><span>03</span> 规则回放</a><a href="#economics"><span>04</span> 成本情景</a><a href="#evidence"><span>05</span> 证据与复现</a></nav>
+  <div class="rail-foot"><span class="status-dot"></span> 离线观察性分析<br><small>2026.09.01 — 09.07</small></div>
+</aside>
+<main id="content">
+  <header class="topbar"><span>INFRASTRUCTURE / RELIABILITY</span><a href="assets/gateway-analysis.zip" download>下载复现材料 <span aria-hidden="true">↗</span></a></header>
+  <section id="overview" class="hero">
+    <div class="eyebrow"><span class="status-dot"></span> 数据驱动的调度改进 · 第 01 期</div>
+    <div class="hero-layout"><div><h1>先理解失败，<br>再决定如何<span>绕开。</span></h1><p class="hero-description">健康状态过期，与剩余容量不足，指向两种不同的风险。<br class="desktop">用一周的调度记录，寻找更有针对性的网关路由策略。</p><a class="button primary" href="#signals">查看关键发现 <span aria-hidden="true">↓</span></a></div>
+    <div class="finding"><div class="finding-top">核心观察 <span>↗</span></div><h2>不同集群，<br>不能共用一种判断。</h2><div class="finding-rule"><span>华北异构集群</span><strong>关注低槽位</strong></div><div class="finding-rule"><span>另外三个集群</span><strong>关注状态过期</strong></div><p>相关性支持候选策略，<br>线上效果仍需对照验证。</p></div></div>
+    <div class="metrics"><div><span>唯一请求</span><strong>1,027<small>次</small></strong><p>原始 1,078 行，去除 51 行重复</p></div><div><span>已知结果失败率</span><strong>12.91<small>%</small></strong><p>126 次失败 / 976 次已知结果</p></div><div><span>结果未知</span><strong>51<small>次</small></strong><p>客户端中断，保留为未知</p></div><div><span>集群范围</span><strong>4<small>个</small></strong><p>状态年龄与容量分别分析</p></div></div>
+  </section>
+  <section id="signals" class="section">
+    <div class="section-head"><div><div class="eyebrow">02 / READ THE SIGNALS</div><h2>风险，藏在分层之后。</h2><p>选择一个指标，比较四个集群的已知结果失败率。</p></div><div class="segmented" aria-label="风险指标"><button data-risk="age" aria-pressed="true">状态年龄</button><button data-risk="slots" aria-pressed="false">剩余槽位</button></div></div>
+    <div class="signal-panel"><div class="chart-heading"><h3 id="risk-title">健康快照超过 15 分钟后，哪些集群更危险？</h3><div class="legend"><span><i class="blue"></i><b id="legend-normal">年龄 ≤15 分钟</b></span><span><i class="orange"></i><b id="legend-risk">年龄 >15 分钟</b></span></div></div><div id="risk-chart" class="risk-chart"></div><p class="chart-note">全量描述 · 去重后样本。标注为失败数 / 已知结果数；51 次结果未知不进入失败率分母。</p></div>
+    <div class="insight" aria-live="polite"><span class="insight-label">观察笔记</span><p id="risk-insight"></p></div>
+    <div class="method-strip"><span>口径提示</span><p>状态年龄 = 请求时间 − 健康状态最后同步时间。两个时间字段先统一到 UTC；槽位值是上次同步时的快照，不代表实时容量。</p></div>
+  </section>
+  <section id="policy" class="section shaded">
+    <div class="section-head"><div><div class="eyebrow">03 / REPLAY THE DECISIONS</div><h2>覆盖同样的失败，<br>减少多余的干预。</h2><p>阈值和集群模式只用前段 717 次请求选择，再固定规则做后段回放。</p></div><div class="segmented cohort-tabs" aria-label="回放样本"><button data-split="validation" aria-pressed="true">后段验证</button><button data-split="train" aria-pressed="false">前段选择</button><button data-split="all_descriptive" aria-pressed="false">全量描述</button></div></div>
+    <div class="policy-rules"><div><span>01 / 华北异构</span><strong>剩余槽位 ≤3</strong><p>标记当前目标，评估容量与改派</p></div><div><span>02 / 华东 · 华南 · 香港</span><strong>状态年龄 >15 分钟</strong><p>先刷新健康状态，必要时绕开目标</p></div><div><span>03 / 执行边界</span><strong>标记目标 ≠ 丢弃请求</strong><p>需要同模型规格的替代容量与恢复机制</p></div></div>
+    <div class="replay-summary"><div><span>分集群规则标记</span><strong id="summary-alerts"></strong></div><div><span>覆盖已知失败</span><strong id="summary-recall"></strong></div><div><span>相比全局 OR 少标记</span><strong id="summary-reduction"></strong></div><p id="cohort-description"></p></div>
+    <div class="table-scroll"><table><caption class="sr-only">不同规则的标记构成与乐观成本情景</caption><thead><tr><th scope="col">候选策略</th><th scope="col">标记请求</th><th scope="col">命中原失败</th><th scope="col">标记原成功</th><th scope="col">标记未知</th><th scope="col">乐观成本 / 元</th></tr></thead><tbody id="policy-table"></tbody></table></div>
+    <p class="chart-note">乐观成本：未覆盖的已知失败 ×120 + 所有标记 ×10；假设命中失败均可挽回、干预不引入新失败。每标记请求 10 元为事件费代理，非真实节点事件计数。</p>
+    <details class="disclosure"><summary>时间回放能说明什么，不能说明什么？ <span>＋</span></summary><p>北京时间 2026-09-05 21:09 为切分点，同一时间戳不跨集合。前段搜索 48 组阈值，选出 15 分钟与 3 个槽位，再选择各集群使用的信号。全量探索先于规则设计，因此后段不是从未查看的盲测集；仍需新日期数据与线上对照确认。15 分钟也不是已证明的精确最优生产 TTL。</p></details>
+  </section>
+  <section id="economics" class="section">
+    <div class="section-head"><div><div class="eyebrow">04 / TEST THE ECONOMICS</div><h2>能挽回多少，<br>才值得改派？</h2><p>固定后段分集群规则，调整两个尚未被观测的假设。<strong>这里不是线上收益承诺。</strong></p></div><span class="pill">交互情景计算</span></div>
+    <div class="economics-layout"><div class="controls"><label for="rescue">原失败被挽回的比例 q <output id="rescue-label" for="rescue">50%</output></label><input id="rescue" type="range" min="0" max="100" step="1" value="50"><div class="range-labels"><span>0% 无法挽回</span><span>100% 全部挽回</span></div><label for="harm">原成功因干预新增失败的比例 r <output id="harm-label" for="harm">0%</output></label><input id="harm" type="range" min="0" max="10" step="0.1" value="0"><div class="range-labels"><span>0% 无新增失败</span><span>10%</span></div><div class="preset-row"><button data-preset="50,0">一半挽回</button><button data-preset="50,5">考虑误干预</button><button data-preset="100,0">乐观上限情景</button></div><div class="formula">净收益 = 120 × (34q − 41r) − 790</div><p class="chart-note">后段 79 次标记：34 次原失败、41 次原成功、4 次未知。未知不计额外收益或新增失败，但计入动作费。</p></div><div class="result-panel"><span>相对不干预的情景净收益</span><div class="big-result" aria-live="polite"><strong id="saving">1,250</strong><span>元</span></div><p id="result-note"></p><div class="result-divider"></div><div class="result-stats"><div><span>动作费代理</span><strong>790 元</strong></div><div><span>当前 r 下的回本 q</span><strong id="break-even">19.36%</strong></div></div><svg id="cost-chart" viewBox="0 0 500 200" role="img" aria-label="不同挽回比例下净收益的情景曲线"></svg><p class="chart-note">每次失败 120 元；每标记请求暂按 10 元。实际事件费、刷新与等待成本仍需补齐。</p></div></div>
+  </section>
+  <section id="evidence" class="section shaded">
+    <div class="section-head"><div><div class="eyebrow">05 / FOLLOW THE EVIDENCE</div><h2>每个数字，都能追溯。</h2><p>从原始 CSV 到逐请求标记、成本公式与图表，保留完整复现路径。</p></div><a class="button dark" href="assets/gateway-analysis.zip" download>下载完整复现包 <span>↓</span></a></div>
+    <div class="audit-flow"><div><span>01</span><h3>原始输入</h3><strong>1,078 行</strong><p>8 个字段 · 一周调度记录</p></div><div><span>02</span><h3>去重保留</h3><strong>1,027 次</strong><p>51 行重复移除 · 原文件不改写</p></div><div><span>03</span><h3>标签分开</h3><strong>976 + 51</strong><p>已知结果 + 未知结果</p></div><div><span>04</span><h3>时间回放</h3><strong>717 / 310</strong><p>前段规则选择 / 后段验证</p></div></div>
+    <div class="evidence-links"><a href="assets/audit.json" download><span>数据审计</span><strong>来源哈希与样本口径 ↗</strong></a><a href="assets/policy.json" download><span>候选规则</span><strong>冻结阈值与集群模式 ↗</strong></a><a href="assets/policy_comparison.csv" download><span>回放明细</span><strong>各规则完整对比 CSV ↗</strong></a></div>
+    <details class="disclosure"><summary>查看三张可下载的完整分析图 <span>＋</span></summary><div class="figure-list"><figure><img src="assets/risk_by_cluster.png" loading="lazy" alt="各集群按状态年龄及剩余槽位分组的失败率，附已知样本分母"><figcaption>集群风险差异 <a href="assets/risk_by_cluster.png" download>下载 PNG ↓</a></figcaption></figure><figure><img src="assets/rule_comparison.png" loading="lazy" alt="后段不同规则标记结果构成及乐观情景成本"><figcaption>规则效果对比 <a href="assets/rule_comparison.png" download>下载 PNG ↓</a></figcaption></figure><figure><img src="assets/cost_sensitivity.png" loading="lazy" alt="不同挽回比例与新增失败比例下的成本收益情景"><figcaption>成本敏感性 <a href="assets/cost_sensitivity.png" download>下载 PNG ↓</a></figcaption></figure></div></details>
+    <div class="limitations"><h3>尚不能由这份数据回答的事</h3><p>没有节点 ID、等待时长、实际改派结果或实时替代容量，因此不能定位坏节点、计算等待节省、统计真实不可用事件，或宣称线上失败率已经下降。下一步应先影子运行，再做小流量随机对照，并保留回滚与节点恢复机制。</p></div>
+    <div class="reproduce"><div><span class="eyebrow">REPRODUCE</span><h3>运行分析与生成图表</h3><p>Python 3.13 + uv；依赖版本已锁定。</p></div><pre><code>uv sync --locked --group plots
+uv run --locked python main.py
+uv run --locked --group plots python plot_results.py
+uv run --locked pytest -q</code></pre></div>
+    <p class="source-hash">源文件 SHA256 <code id="source-hash"></code></p>
+  </section>
+  <footer><div class="footer-brand">GATEWAY <span>/ FIELD REPORT 01</span></div><p>观察性数据 · 可复现分析 · 线上效果待验证</p><a href="#overview">回到顶部 ↑</a></footer>
+</main>
+</body></html>
